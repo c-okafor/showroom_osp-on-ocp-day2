@@ -4,6 +4,10 @@
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib/credentials.sh
+source "${SCRIPT_DIR}/lib/credentials.sh"
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -370,41 +374,19 @@ show_usage() {
     echo "  $0 --inventory ../lab1/hosts.yml full      # Use custom inventory file"
     echo ""
     echo "Credentials File Format:"
-    echo "  Create a YAML file with your Red Hat credentials:"
-    echo "  registry_username: \"12345678|myserviceaccount\""
-    echo "  registry_password: \"eyJhbGciOiJSUzUxMiJ9...\""
-    echo "  rhc_username: \"your-rh-username@email.com\""
-    echo "  rhc_password: \"YourRHPassword123\""
-}
-
-# Function to parse credentials file
-parse_credentials_file() {
-    local credentials_file="$1"
-    
-    if [[ ! -f "$credentials_file" ]]; then
-        print_error "Credentials file not found: $credentials_file"
-        exit 1
-    fi
-    
-    print_status "Loading credentials from: $credentials_file"
-    
-    # Parse YAML credentials file and export as environment variables
-    # This uses a simple grep-based approach to avoid requiring yq or python
-    export CRED_REGISTRY_USERNAME=$(grep "^registry_username:" "$credentials_file" | sed 's/registry_username: *["\x27]\?\([^"\x27]*\)["\x27]\?/\1/')
-    export CRED_REGISTRY_PASSWORD=$(grep "^registry_password:" "$credentials_file" | sed 's/registry_password: *["\x27]\?\([^"\x27]*\)["\x27]\?/\1/')
-    export CRED_RHC_USERNAME=$(grep "^rhc_username:" "$credentials_file" | sed 's/rhc_username: *["\x27]\?\([^"\x27]*\)["\x27]\?/\1/')
-    export CRED_RHC_PASSWORD=$(grep "^rhc_password:" "$credentials_file" | sed 's/rhc_password: *["\x27]\?\([^"\x27]*\)["\x27]\?/\1/')
-    
-    # Validate that required credentials were found
-    if [[ -z "$CRED_REGISTRY_USERNAME" || -z "$CRED_REGISTRY_PASSWORD" || -z "$CRED_RHC_USERNAME" || -z "$CRED_RHC_PASSWORD" ]]; then
-        print_error "Missing required credentials in file: $credentials_file"
-        echo "Required fields: registry_username, registry_password, rhc_username, rhc_password"
-        exit 1
-    fi
-    
-    print_status "Credentials loaded successfully"
-    print_status "Registry username: ${CRED_REGISTRY_USERNAME%%|*}|***"  # Show only the first part before |
-    print_status "RHC username: $CRED_RHC_USERNAME"
+    echo "  Registry (always required):"
+    echo "    registry_username: \"12345678|myserviceaccount\""
+    echo "    registry_password: \"eyJhbGciOiJSUzUxMiJ9...\""
+    echo ""
+    echo "  Subscription — use ONE mode only (not both):"
+    echo "  Customer Portal:"
+    echo "    rhc_username: \"your-rh-username@email.com\""
+    echo "    rhc_password: \"YourRHPassword123\""
+    echo "  Satellite (RHDP labs):"
+    echo "    satellite_url: \"demosat-ha.infra.demo.redhat.com\""
+    echo "    satellite_org: \"Red_Hat_RHDP_Labs\""
+    echo "    ocp4_workload_rhoso_deployment_rhc_activation_key: \"your-activation-key\""
+    echo "    satellite_insecure: false  # optional, default false"
 }
 
 # Function to check prerequisites
@@ -442,7 +424,7 @@ check_inventory() {
         # Check if the changeme values are in credential fields and we have credentials from file
         if [[ -n "${CRED_REGISTRY_USERNAME:-}" ]]; then
             # We have credentials from file, so check only non-credential changeme values
-            if grep -v -E "(registry_username|registry_password|rhc_username|rhc_password)" "$inventory_file" | grep -q "changeme"; then
+            if grep -v -E "(registry_username|registry_password|rhc_username|rhc_password|satellite_url|satellite_org|ocp4_workload_rhoso_deployment_rhc_activation_key|satellite_insecure)" "$inventory_file" | grep -q "changeme"; then
                 has_changeme=true
             fi
         else
@@ -461,8 +443,8 @@ check_inventory() {
         if [[ -z "${CRED_REGISTRY_USERNAME:-}" ]]; then
         echo "  - registry_username: Red Hat registry service account username"
         echo "  - registry_password: Red Hat registry service account password/token"
-        echo "  - rhc_username: Red Hat Customer Portal username"
-        echo "  - rhc_password: Red Hat Customer Portal password"
+        echo "  - rhc_username / rhc_password: Customer Portal credentials"
+        echo "    OR satellite_url / satellite_org / ocp4_workload_rhoso_deployment_rhc_activation_key"
             echo ""
             echo "Alternatively, use --credentials FILE to provide credentials externally."
         fi
@@ -588,18 +570,8 @@ run_deployment() {
     
     # If credentials were provided via file, inject them into the inventory
     if [[ -n "${CRED_REGISTRY_USERNAME:-}" ]]; then
-        print_status "Injecting credentials from file into inventory..."
         local target_inventory="$temp_dir/ansible-playbooks/inventory/hosts.yml"
-        
-        # Update registry credentials
-        sed -i "s/registry_username: \"\"/registry_username: \"$CRED_REGISTRY_USERNAME\"/" "$target_inventory"
-        sed -i "s/registry_password: \"\"/registry_password: \"$CRED_REGISTRY_PASSWORD\"/" "$target_inventory"
-        
-        # Update RHC credentials  
-        sed -i "s/rhc_username: \"\"/rhc_username: \"$CRED_RHC_USERNAME\"/" "$target_inventory"
-        sed -i "s/rhc_password: \"\"/rhc_password: \"$CRED_RHC_PASSWORD\"/" "$target_inventory"
-        
-        print_status "Credentials injected into inventory"
+        inject_credentials_into_inventory "$target_inventory"
     fi
     
     # Ensure sshpass is available for SSH proxy commands

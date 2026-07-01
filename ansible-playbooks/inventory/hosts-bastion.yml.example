@@ -12,17 +12,15 @@ all:
     registry_username: ""    # Your registry service account
     registry_password: ""      # Your registry token
     
-    # REQUIRED: Red Hat Customer Portal Credentials  
-    # Your login credentials for https://access.redhat.com
-    rhc_username: ""       # Your RH Customer Portal username
-    rhc_password: ""                 # Your RH Customer Portal password
+    # Subscription — Customer Portal OR Satellite (mutually exclusive)
+    rhc_username: ""       # Customer Portal username (Portal mode only)
+    rhc_password: ""       # Customer Portal password (Portal mode only)
 
-    # Optional Satellite registration (RHDP labs / demosat).
-    # When set, Customer Portal credentials above are not used for the dataplane.
-    # satellite_url: "your_satellite.example.com"
-    # satellite_org: "your_satellite_org"
-    # ocp4_workload_rhoso_deployment_rhc_activation_key: "your-activation-key"
-    # satellite_insecure: false    
+    # Satellite registration (RHDP labs / demosat — Satellite mode only)
+    satellite_url: ""
+    satellite_org: ""
+    ocp4_workload_rhoso_deployment_rhc_activation_key: ""
+    satellite_insecure: false
     # OPTIONAL: Internal lab hostnames (usually defaults work)
     nfs_server_hostname: "nfsserver"                  # Internal NFS server hostname
     compute_hostname: "compute01"                     # Internal compute node hostname

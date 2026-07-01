@@ -113,11 +113,10 @@ subscription_manager_password: "{{ rhc_password | default('') }}"
 # Satellite registration (optional — when satellite_url is set, overrides portal login)
 # satellite_url and satellite_org are supplied via inventory when using demosat.
 satellite_insecure: false
-ocp4_workload_rhoso_deployment_rhc_activation_key: ""
 rhc_activation_keys: >-
   {{
-    [ocp4_workload_rhoso_deployment_rhc_activation_key]
-    if (ocp4_workload_rhoso_deployment_rhc_activation_key | length > 0)
+    [ocp4_workload_rhoso_deployment_rhc_activation_key | default('')]
+    if (ocp4_workload_rhoso_deployment_rhc_activation_key | default('') | length > 0)
     else []
   }}
 

@@ -68,19 +68,34 @@ You can provide credentials in two ways:
 
 #### Option A: Edit inventory directly
 Update the credential fields in `inventory/hosts-bastion.yml`:
-- `registry_username` and `registry_password`
-- `rhc_username` and `rhc_password`
+- `registry_username` and `registry_password` (always required)
+- **Customer Portal mode:** `rhc_username` and `rhc_password`
+- **Satellite mode (RHDP labs):** `satellite_url`, `satellite_org`, and `ocp4_workload_rhoso_deployment_rhc_activation_key`
+
+Use **one** subscription mode only — Portal and Satellite credentials are mutually exclusive.
 
 #### Option B: Use external credentials file
-Create a separate credentials file:
+Create a separate credentials file with registry credentials plus **either** Portal **or** Satellite subscription fields:
 
 ```yaml
-# credentials.yml
+# credentials.yml — Customer Portal example
 registry_username: "12345678|myserviceaccount"
 registry_password: "eyJhbGciOiJSUzUxMiJ9..."
 rhc_username: "your-rh-username@email.com"
 rhc_password: "YourRHPassword123"
 ```
+
+```yaml
+# credentials.yml — Satellite example (RHDP demosat)
+registry_username: "12345678|myserviceaccount"
+registry_password: "eyJhbGciOiJSUzUxMiJ9..."
+satellite_url: "demosat-ha.infra.demo.redhat.com"
+satellite_org: "Red_Hat_RHDP_Labs"
+ocp4_workload_rhoso_deployment_rhc_activation_key: "your-activation-key"
+# satellite_insecure: true  # only if CA install fails
+```
+
+See `credentials.yml.example` for the full template.
 
 ## Usage
 

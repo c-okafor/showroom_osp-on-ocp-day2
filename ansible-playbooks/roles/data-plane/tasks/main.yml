@@ -102,6 +102,25 @@
         ssh-privatekey: "{{ nova_migration_key_files.results[0].content }}"
         ssh-publickey: "{{ nova_migration_key_files.results[1].content }}"
 
+- name: Validate subscription credential mode
+  ansible.builtin.assert:
+    that:
+      - (satellite_url | default('') | length > 0) != (subscription_manager_username != '' and subscription_manager_password != '')
+    fail_msg: >-
+      Use either Satellite (satellite_url + satellite_org + activation key)
+      OR Customer Portal (rhc_username + rhc_password), not both.
+
+- name: Validate Satellite credentials are complete when Satellite mode is used
+  ansible.builtin.assert:
+    that:
+      - satellite_org | default('') | length > 0
+      - ocp4_workload_rhoso_deployment_rhc_activation_key | default('') | length > 0
+    fail_msg: >-
+      Satellite mode requires satellite_url, satellite_org, and
+      ocp4_workload_rhoso_deployment_rhc_activation_key.
+
+  when: satellite_url | default('') | length > 0
+
 - name: Configure optional Satellite registration
   ansible.builtin.import_tasks: satellite_registration.yml
 

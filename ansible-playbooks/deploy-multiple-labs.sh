@@ -4,6 +4,12 @@
 # This script deploys multiple RHOSO labs using existing complete inventory files
 # It automatically discovers available labs and supports both sequential and parallel execution
 
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib/credentials.sh
+source "${SCRIPT_DIR}/lib/credentials.sh"
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -95,11 +101,12 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Validate credentials file exists
+# Validate credentials file exists and parse subscription mode once
 if [[ ! -f "$CREDENTIALS_FILE" ]]; then
     print_error "Credentials file not found: $CREDENTIALS_FILE"
     exit 1
 fi
+parse_credentials_file "$CREDENTIALS_FILE"
 
 print_status "Multi-Lab RHOSO Deployment Script"
 print_info "Credentials file: $CREDENTIALS_FILE"
@@ -176,26 +183,8 @@ deploy_single_lab() {
     local temp_inventory="temp_inventory_${lab_id}.yml"
     cp "$inventory_file" "$temp_inventory"
     
-    # Inject credentials if available
-    if [[ -f "$CREDENTIALS_FILE" ]]; then
-        local registry_username=$(grep "^registry_username:" "$CREDENTIALS_FILE" | sed 's/registry_username: *["\x27]\?\([^"\x27]*\)["\x27]\?/\1/')
-        local registry_password=$(grep "^registry_password:" "$CREDENTIALS_FILE" | sed 's/registry_password: *["\x27]\?\([^"\x27]*\)["\x27]\?/\1/')
-        local rhc_username=$(grep "^rhc_username:" "$CREDENTIALS_FILE" | sed 's/rhc_username: *["\x27]\?\([^"\x27]*\)["\x27]\?/\1/')
-        local rhc_password=$(grep "^rhc_password:" "$CREDENTIALS_FILE" | sed 's/rhc_password: *["\x27]\?\([^"\x27]*\)["\x27]\?/\1/')
-        
-        if [[ -n "$registry_username" ]]; then
-            sed -i "s/registry_username: \"\"/registry_username: \"$registry_username\"/" "$temp_inventory"
-        fi
-        if [[ -n "$registry_password" ]]; then
-            sed -i "s/registry_password: \"\"/registry_password: \"$registry_password\"/" "$temp_inventory"
-        fi
-        if [[ -n "$rhc_username" ]]; then
-            sed -i "s/rhc_username: \"\"/rhc_username: \"$rhc_username\"/" "$temp_inventory"
-        fi
-        if [[ -n "$rhc_password" ]]; then
-            sed -i "s/rhc_password: \"\"/rhc_password: \"$rhc_password\"/" "$temp_inventory"
-        fi
-    fi
+    # Inject credentials into temporary inventory
+    inject_credentials_into_inventory "$temp_inventory"
     
     # Run deployment
     local log_file="deployment_${lab_id}.log"
