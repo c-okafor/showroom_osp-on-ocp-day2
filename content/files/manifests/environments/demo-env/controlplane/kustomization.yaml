@@ -1,0 +1,74 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../../base/controlplane
+
+patches:
+  - target:
+      group: nmstate.io
+      version: v1
+      kind: NodeNetworkConfigurationPolicy
+      name: osp-multi-nic-worker-ocp4-worker1
+    patch: |-
+      - op: replace
+        path: /metadata/name
+        value: "control-plane-cluster-z4rmb-1"
+      - op: replace
+        path: /spec/nodeSelector/kubernetes.io~1hostname
+        value: "control-plane-cluster-z4rmb-1"
+      - op: replace
+        path: /spec/desiredState/interfaces/3/ipv4/address/0/ip
+        value: "192.168.19.240"
+
+  - target:
+      group: nmstate.io
+      version: v1
+      kind: NodeNetworkConfigurationPolicy
+      name: osp-multi-nic-worker-ocp4-worker2
+    patch: |-
+      - op: replace
+        path: /metadata/name
+        value: "control-plane-cluster-z4rmb-2"
+      - op: replace
+        path: /spec/nodeSelector/kubernetes.io~1hostname
+        value: "control-plane-cluster-z4rmb-2"
+      - op: replace
+        path: /spec/desiredState/interfaces/3/ipv4/address/0/ip
+        value: "192.168.19.241"
+
+  - target:
+      group: nmstate.io
+      version: v1
+      kind: NodeNetworkConfigurationPolicy
+      name: osp-multi-nic-worker-ocp4-worker3
+    patch: |-
+      - op: replace
+        path: /metadata/name
+        value: "control-plane-cluster-z4rmb-3"
+      - op: replace
+        path: /spec/nodeSelector/kubernetes.io~1hostname
+        value: "control-plane-cluster-z4rmb-3"
+      - op: replace
+        path: /spec/desiredState/interfaces/3/ipv4/address/0/ip
+        value: "192.168.19.242"
+
+  - target:
+      kind: NetConfig
+      name: openstacknetconfig
+    patch: |-
+      - op: replace
+        path: /spec/networks/0/dnsDomain
+        value: ctlplane.sandbox-z4rmb-ocp4-cluster.svc.cluster.local
+      - op: replace
+        path: /spec/networks/1/dnsDomain
+        value: internalapi.sandbox-z4rmb-ocp4-cluster.svc.cluster.local
+      - op: replace
+        path: /spec/networks/2/dnsDomain
+        value: tenant.sandbox-z4rmb-ocp4-cluster.svc.cluster.local
+      - op: replace
+        path: /spec/networks/3/dnsDomain
+        value: storage.sandbox-z4rmb-ocp4-cluster.svc.cluster.local
+      - op: replace
+        path: /spec/networks/4/dnsDomain
+        value: external.sandbox-z4rmb-ocp4-cluster.svc.cluster.local
