@@ -1,0 +1,17 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  finalizers:
+  - resources-finalizer.argocd.argoproj.io
+  name: environment-rhoso-demo-env-controlplane
+  namespace: openshift-gitops
+spec:
+  destination:
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    path: content/files/manifests/environments/demo-env/controlplane/
+    repoURL: https://github.com/c-okafor/showroom_osp-on-ocp-day2.git
+    targetRevision: HEAD
+  syncPolicy:
+    automated: {}

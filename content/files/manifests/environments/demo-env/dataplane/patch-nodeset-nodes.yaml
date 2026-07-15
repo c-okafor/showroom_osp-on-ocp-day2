@@ -1,0 +1,26 @@
+  - op: add
+    path: /spec/nodes/edpm-compute-1
+    value:
+      hostName: edpm-compute-1.sandbox-z4rmb-ocp4-cluster.svc.cluster.local
+      networks:
+      - name: ctlplane
+        subnetName: subnet1
+        defaultRoute: false
+        fixedIP: 172.22.0.100
+      - name: internalapi
+        subnetName: subnet1
+        fixedIP: 172.17.0.100
+      - name: storage
+        subnetName: subnet1
+        fixedIP: 172.18.0.100
+      - name: tenant
+        subnetName: subnet1
+        fixedIP: 172.19.0.100
+      - name: external
+        subnetName: subnet1
+        fixedIP: 172.21.0.100
+      ansible:
+        ansibleHost: 172.22.0.100
+        ansibleUser: cloud-user
+        ansibleVars:
+          fqdn_internal_api: edpm-compute-1.sandbox-z4rmb-ocp4-cluster.svc.cluster.local
